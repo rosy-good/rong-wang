@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: rongwang-backend
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# 数据库连接将在工程设计确认后启用。不要在此文件提交真实密码。
