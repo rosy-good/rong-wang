@@ -1,6 +1,6 @@
 # 数据库设计基线
 
-基线日期：2026-11-11。以下为逻辑设计，不生成建表 SQL。[PRD](PRD.md) 定义已确认规则；[未决事项](OPEN_QUESTIONS.md) 约束生命周期设计。
+基线日期：2026-11-11；物理建表脚本更新日期：2026-11-20。以下为逻辑设计；账号表 SQL 位于 [001_auth_schema.sql](../backend/sql/001_auth_schema.sql)，其余九张业务表位于 [002_learning_schema.sql](../backend/sql/002_learning_schema.sql)。物理表统一加 `rw_` 前缀，逻辑表名见下表。[PRD](PRD.md) 定义已确认规则；[未决事项](OPEN_QUESTIONS.md) 约束生命周期设计。
 
 ## 1. 分表与 ER
 题库原题、任务信息、任务题目完整快照分别存储。快照不是只有两个 ID 的关联表。
@@ -32,7 +32,7 @@ USER 的教师创建课程、学生加入并作答，角色约束必须由后端
 
 | 表 | 字段及意义 |
 |---|---|
-| user | id、username 唯一账号、password_hash 安全密码哈希、display_name、student_no 可空、role 固定 TEACHER/STUDENT、status ACTIVE/DISABLED |
+| user（物理表 rw_user） | id、username 唯一账号、password_hash BCrypt 安全密码哈希、display_name、student_no 可空、role 固定 TEACHER/STUDENT、status ACTIVE/DISABLED、created_at、updated_at |
 | course | id、teacher_id、name、description、invite_code 唯一、status（需能识别归档；生命周期转换待 Q8） |
 | course_member | id、course_id、student_id、joined_at；退出及移除字段待 Q8，不提前假设成员永远不能退出 |
 | question | id、course_id、type、stem、options_json、correct_answer_json、score、explanation；删除/停用策略待 Q8 |
@@ -42,6 +42,8 @@ USER 的教师创建课程、学生加入并作答，角色约束必须由后端
 | submission_answer | id、submission_id、task_question_id、answer_json、is_correct、earned_score；漏答用空数组并保存零分记录 |
 | mistake | id、student_id、question_id、last_wrong_task_question_id、wrong_count、last_wrong_at、mastery_status UNMASTERED/MASTERED、mastered_at 可空 |
 | practice_record | id、mistake_id、task_question_id、answer_json、is_correct、earned_score、practiced_at、idempotency_key、request_hash |
+
+逻辑名 `course`、`course_member`、`question`、`task`、`task_question`、`submission`、`submission_answer`、`mistake`、`practice_record` 对应物理表 `rw_course`、`rw_course_member`、`rw_question`、`rw_task`、`rw_task_question`、`rw_submission`、`rw_submission_answer`、`rw_mistake`、`rw_practice_record`。建表脚本不修改已有 `rw_user` 和测试账号。
 
 分值、任务总分、答卷总分、逐题得分均用 DECIMAL(8,2)，Java 对应 BigDecimal。单题分值大于零且最多两位小数；得分允许零。字段上限为 999999.99，发布时校验总分不溢出；不能通过四舍五入接受非法三位小数。平均分用 BigDecimal 计算，展示舍入约定由工程设计明确，不改变代表答卷选择。
 选项如 A→Java、B→MySQL，答案用键数组；判断使用 TRUE/FALSE。JSON 仅保存题内数组，成员、任务、答卷关系使用关联表。
@@ -76,5 +78,7 @@ attempt_no 是落实“最后一次获得最高分”的工程排序设计，同
 并发错题写入需原子计数或行锁，不能读后无锁覆盖；最近错误时间不能被较早事件覆盖。
 
 ## 6. 历史与 P1 边界
+题库工程实现（2026-11-21）：沿用现有 `rw_question`，无需迁移。options_json 保存有序的 `[{"key":"A","text":"选项内容"}]`，correct_answer_json 保存 `["A","C"]`，具体输入规则见 [API 设计](API_DESIGN.md)。PATCH 在事务中锁定原题行，合并并校验后仅更新题目内容；不更新 course_id，不写入 rw_task_question。已发布快照隔离已通过真实 MySQL 测试；任务创建与发布接口尚未实现。
+
 所有正式、复练历史和对应题目版本保留；禁止用更新题库或级联删除破坏已有历史。课程、成员、题目、任务具体删除、退出、归档入口和状态策略待 Q8，不把“只停用题目”“归档后禁止复练”等建议当规则。
 复练使用最近答错快照是工程建议；每次必须记录实际使用版本，不能用最新题库内容重写历史。

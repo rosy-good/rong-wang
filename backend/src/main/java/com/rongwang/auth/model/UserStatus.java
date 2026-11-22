@@ -1,0 +1,19 @@
+package com.rongwang.auth.model;
+
+import com.baomidou.mybatisplus.annotation.EnumValue;
+
+public enum UserStatus {
+    ACTIVE("ACTIVE"),
+    DISABLED("DISABLED");
+
+    @EnumValue
+    private final String value;
+
+    UserStatus(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+}

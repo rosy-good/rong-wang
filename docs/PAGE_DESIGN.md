@@ -10,9 +10,13 @@
 | /login | 预创建账号密码登录、错误提示；禁用不能登录，无注册入口 |
 | /403、/404 | 无权访问或资源不存在，返回可访问页面 |
 
-账号维护操作界面和认证方案由工程设计明确，不在本期自动新增管理后台。
+第一版使用 Session；账号由维护者通过初始化 SQL 管理，不新增管理后台页面。
+
+题库前端对接约定（2026-11-21）：选项使用 key/text，判断题固定 A「正确」、B「错误」；分值以字符串传输。保存失败展示后端校验信息并保留表单。编辑原题不转移课程、不更改任务快照。字段长度和 PATCH 语义见 [API 设计](API_DESIGN.md)；本次仅后端实现，页面尚未接入真实接口。
 
 ## 2. 教师页面
+正式前端入口补充（2026-11-22）：侧栏新增“成绩统计” `/teacher/statistics`，先选择课程；课程详情新增“成绩统计”快捷卡片，进入 `/teacher/courses/:id/results` 选择任务。已发布任务跳转到原有 `/teacher/tasks/:id/results` 展示统计，草稿显示“尚未发布，暂无成绩”。入口复用原有接口和 Q10 统计口径。
+
 | 路由 | 功能 |
 |---|---|
 | /teacher/courses | 本人课程列表、创建入口 |
@@ -20,7 +24,7 @@
 | /teacher/courses/:id/edit | 编辑课程名称与介绍；无已定案归档/删除操作 |
 | /teacher/courses/:id | 概览、邀请码展示与重置确认，提示旧码立即失效、原成员保留 |
 | /teacher/courses/:id/students | 当前成员、加入时间；无审批 |
-| /teacher/courses/:id/questions | 独立题库检索、新增、编辑入口 |
+| /teacher/courses/:id/questions | 独立题库按题干关键词、题型检索及分页，新增、编辑入口 |
 | /teacher/courses/:id/questions/new | 三种题型、题干选项、答案解析、正数最多两位小数分值 |
 | /teacher/questions/:id/edit | 编辑原题，提示不会改变已发布任务 |
 | /teacher/courses/:id/tasks | 草稿、已发布、已截止任务列表 |

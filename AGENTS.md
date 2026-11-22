@@ -21,7 +21,20 @@
 
 ## 修改与验证
 规则变化须同步页面、接口字段、数据库、流程和验收案例，记录审查结果。只报告实际完成的检查；文档检查不等同于应用测试。前端使用 `npm run dev`、`npm run build`；后端使用 `mvn spring-boot:run`、`mvn test`。MySQL 配置启用前不得声称数据库集成通过。
-P1 为 Q8 生命周期、Q11 部署容量、Q12 自动保存及 Q1 账号操作与认证技术，不能擅自定案。
+P1 为 Q8 生命周期、Q11 部署容量及 Q12 自动保存，不能擅自定案。Q1 工程方案已于 2026-11-14 确认：采用 Session；账号由维护者通过初始化 SQL 预创建，第一版不开发管理员界面。
 
 ## 提交与评审
 当前无可参考 Git 历史。后续提交建议使用简短明确的动作说明；评审说明列出修改文档、对应规则、验证结果和未决项。不得提交密码、令牌或真实账号凭据。
+
+## 自动检查
+| 规则 | 由什么拦住 |
+|---|---|
+| 正确密码可登录，错误密码、未知账号和禁用账号必须拒绝 | `AuthServiceTests` |
+| 登录创建 Session，退出使 Session 失效 | `AuthControllerWebTests` |
+| 受保护接口拒绝未登录请求 | `SessionAuthInterceptorTests` |
+| 参数校验与错误 JSON 返回统一错误结构 | `AuthControllerWebTests` |
+| 课程角色、归属、成员范围、邀请码重置与并发重复入课 | `CourseMysqlTests`（仅连接隔离的 `rongwang_test`，需显式设置 `COURSE_TEST_DB_URL`） |
+| 课程写请求必须携带当前 Session 的 CSRF 令牌 | `CourseMysqlTests.csrfMissingOrWrongDoesNotCreateCourse` |
+| 题库权限、三种题型校验、精度、部分编辑和原题/快照隔离 | `QuestionMysqlTests`（沿用隔离测试库环境变量） |
+| 任务同课程选题、草稿副本、发布锁定、复制隔离、学生无答案响应 | `TaskMysqlTests`（只连接隔离的 `rongwang_test`） |
+| 幂等提交、截止时间、快照判分、错题复练、最高分代表和统计口径 | `SubmissionMysqlTests`（只连接隔离的 `rongwang_test`） |

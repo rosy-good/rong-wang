@@ -1,14 +1,33 @@
 spring:
+  config:
+    import:
+      - optional:file:./config/application-local.properties
+      - optional:file:./backend/config/application-local.properties
   application:
     name: rongwang-backend
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/rongwang_dev?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:rongwang}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: Asia/Shanghai
 
 server:
   port: 8080
   servlet:
     context-path: /api
+    session:
+      timeout: 2h
+      cookie:
+        http-only: true
+        same-site: lax
 
-# 数据库连接将在工程设计确认后启用。不要在此文件提交真实密码。
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+# 通过环境变量提供数据库密码，不要把真实密码写入仓库。
